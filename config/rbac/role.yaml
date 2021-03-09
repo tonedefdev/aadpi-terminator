@@ -1,0 +1,34 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - aadpi-terminator.k8s.io
+  resources:
+  - azureidentityterminators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - aadpi-terminator.k8s.io
+  resources:
+  - azureidentityterminators/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - aadpi-terminator.k8s.io
+  resources:
+  - azureidentityterminators/status
+  verbs:
+  - get
+  - patch
+  - update

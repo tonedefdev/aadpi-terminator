@@ -1,0 +1,13 @@
+domain: k8s.io
+layout: go.kubebuilder.io/v3
+projectName: aadpi-terminator
+repo: github.com/tonedefdev/aadpi-terminator
+resources:
+- crdVersion: v1
+  group: aadpi-terminator
+  kind: AzureIdentityTerminator
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}

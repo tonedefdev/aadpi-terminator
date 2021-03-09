@@ -18,20 +18,22 @@ package controllers
 
 import (
 	aadpodv1 "github.com/Azure/aad-pod-identity/pkg/apis/aadpodidentity/v1"
+	"github.com/Azure/go-autorest/autorest/to"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/tonedefdev/aadpi-terminator/pkg/azure/azuread"
-
 	terminatorv1alpha1 "github.com/tonedefdev/aadpi-terminator/api/v1alpha1"
+	azuread "github.com/tonedefdev/aadpi-terminator/pkg/azure"
 )
 
 // AzureIdentityTerminatorReconciler reconciles a AzureIdentityTerminator object
@@ -47,9 +49,9 @@ type AzureIdentityTerminatorReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-func (r *AzureIdentityTerminatorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("azureidentityterminator", req.NamespacedName)
-	ctx := context.Background()
+	ctx = context.Background()
 
 	// Fetch the AzureIdentityTerminator instance
 	terminator := &terminatorv1alpha1.AzureIdentityTerminator{}
@@ -70,13 +72,30 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(req ctrl.Request) (ctrl.Re
 	aadpod := &aadpodv1.AzureIdentity{}
 	err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, aadpod)
 	if err != nil && errors.IsNotFound(err) {
-		//
-		aadAppRegistration := r.CreateApp(terminator.Spec.AADRegistrationName)
-		log.Info("Creating a new Azure AD App Registration", "AzureIdentityTerminator.Namespace", dep.Namespace, "AzureIdentityTerminator.Name", dep.Name)
-		err = r.Create(ctx, dep)
-		if err != nil {
-			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-			return ctrl.Result{}, err
+		// Create the Azure AD Application that the AzureIdentity will leverage
+		aadAppRegistration := r.CreateApp(terminator.Spec.AADRegistrationName, terminator.Spec.ClientSecretDuration)
+		log.Info("Creating a new Azure AD App Registration", "ClientID", aadAppRegistration.ClientID, "Display Name", aadAppRegistration.DisplayName)
+
+		secret := &corev1.Secret{}
+		err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, secret)
+		if err != nil && errors.IsNotFound(err) {
+			// Create Secret that contains the ClientID for the AzureIdentity
+			sec := r.SecretManfiest(terminator, aadAppRegistration)
+			err = r.Create(ctx, sec)
+			if err != nil {
+				log.Error(err, "Failed to create new Secret", "Secret.Namespace", sec.Namespace, "Secret.Name", sec.Name)
+				return ctrl.Result{}, err
+			}
+
+			// Create AzureIdentity
+			azid := r.AzureIdentityManifest(terminator, aadAppRegistration)
+			err = r.Create(ctx, azid)
+			if err != nil {
+				log.Error(err, "Failed to create AzureIdentity", "AzureIdentity.Name", azid.Name)
+				return ctrl.Result{}, err
+			}
+
+			aaidBinding := r.AzureIdentityBindingManifest(terminator)
 		}
 		// Deployment created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
@@ -88,11 +107,67 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(req ctrl.Request) (ctrl.Re
 	return ctrl.Result{}, nil
 }
 
-func (r *AzureIdentityTerminatorReconciler) CreateApp(aadRegName string, duration int64) {
-	app := &azuread.CreateAzureADApp(aadRegName)
-
+// CreateApp creates the Azure AD Application, SPN, and returns the necessary information
+func (r *AzureIdentityTerminatorReconciler) CreateApp(aadRegName string, duration int64) *azuread.App {
+	app := &azuread.App{
+		DisplayName: aadRegName,
+		Duration:    duration,
+	}
+	app.CreateAzureADApp()
+	app.CreateServicePrincipal()
+	return app
 }
 
+// AzureIdentityManifest creates the AzureIdentity manifest
+func (r *AzureIdentityTerminatorReconciler) AzureIdentityManifest(t *terminatorv1alpha1.AzureIdentityTerminator, app *azuread.App) *aadpodv1.AzureIdentity {
+	azid := &aadpodv1.AzureIdentity{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "AzureIdentity",
+			APIVersion: "aadpodidentity.k8s.io/v1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Namespace,
+		},
+		Spec: aadpodv1.AzureIdentitySpec{
+			Type:     aadpodv1.IdentityType(1),
+			ClientID: app.ClientID,
+			ClientPassword: corev1.SecretReference{
+				Name:      t.Name,
+				Namespace: t.Namespace,
+			},
+		},
+	}
+
+	return azid
+}
+
+// AzureIdentityBindingManifest creates teh AzureIdentityBinding manifest
+func (r *AzureIdentityTerminatorReconciler) AzureIdentityBindingManifest(t *terminatorv1alpha1.AzureIdentityTerminator) *aadpodv1.AzureIdentityBinding {
+	// TODO: Implement binding manfiest
+}
+
+// SecretManfiest creates the Secret needed for the AzureIdentity
+func (r *AzureIdentityTerminatorReconciler) SecretManfiest(t *terminatorv1alpha1.AzureIdentityTerminator, app *azuread.App) *corev1.Secret {
+	secret := &corev1.Secret{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Namespace,
+		},
+		Immutable: to.BoolPtr(true),
+		StringData: map[string]string{
+			app.ClientID: app.ClientSecret,
+		},
+	}
+
+	return secret
+}
+
+// SetupWithManager sets up the reconciler management
 func (r *AzureIdentityTerminatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminatorv1alpha1.AzureIdentityTerminator{}).

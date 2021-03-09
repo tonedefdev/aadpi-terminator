@@ -13,19 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type CreateAzureADApp interface {
+// CreateApp interface contains methods to create Azure AD Application resources
+type CreateApp interface {
 	CreateAzureADApp() graphrbac.Application
 	CreateServicePrincipal() graphrbac.ServicePrincipal
 }
 
-type AzureADApp struct {
+// App struct defines an Azure AD Application
+type App struct {
 	ClientID     string
 	ClientSecret string
 	DisplayName  string
+	Duration     int64
+	TenantID     string
 }
 
-// NewAuthorizer returns an authorizer using envrionment variables
-func NewAuthorizer() autorest.Authorizer {
+func newAuthorizer() autorest.Authorizer {
 	authorizer, err := auth.NewAuthorizerFromEnvironment()
 	if err != nil {
 		return nil
@@ -33,13 +36,18 @@ func NewAuthorizer() autorest.Authorizer {
 	return authorizer
 }
 
+func generateRandomSecret() string {
+	randomPassword := uuid.New()
+	return randomPassword.String()
+}
+
 // CreateAzureADApp creates an Azure AD Application
-func (aadp *AzureADApp) CreateAzureADApp() graphrbac.Application {
+func (aadapp *App) CreateAzureADApp() graphrbac.Application {
 	appClient := graphrbac.NewApplicationsClient(os.Getenv("AZURE_TENANT_ID"))
-	appClient.Authorizer = NewAuthorizer()
+	appClient.Authorizer = newAuthorizer()
 
 	appCreateParam := graphrbac.ApplicationCreateParameters{
-		DisplayName:             to.StringPtr(aadp.DisplayName),
+		DisplayName:             to.StringPtr(aadapp.DisplayName),
 		AvailableToOtherTenants: to.BoolPtr(false),
 	}
 
@@ -48,28 +56,23 @@ func (aadp *AzureADApp) CreateAzureADApp() graphrbac.Application {
 		// TODO: Implement logger
 	}
 
-	*aadp.ClientID = *appReg.AppID
+	aadapp.TenantID = os.Getenv("AZURE_TENANT_ID")
+	aadapp.ClientID = *appReg.AppID
 	return appReg
 }
 
-// GenerateRandomSecret creates a random UUID to be used as the client secret
-func GenerateRandomSecret() string {
-	randomPassword := uuid.New()
-	return randomPassword.String()
-}
-
 // CreateServicePrincipal generates a service princiapl for an AzureIdentityTerminator resource
-func (aadp *AzureADApp) CreateServicePrincipal(applicationID string, duration int64) graphrbac.ServicePrincipal {
+func (aadapp *App) CreateServicePrincipal() graphrbac.ServicePrincipal {
 	spnClient := graphrbac.NewServicePrincipalsClient(os.Getenv("AZURE_TENANT_ID"))
 	spnClient.Authorizer = NewAuthorizer()
-	secret := GenerateRandomSecret()
+	secret := generateRandomSecret()
 
 	var now *date.Time
 	var expiration *date.Time
 
 	*now = date.Time{time.Now()}
 	*expiration = date.Time{
-		time.Now().Add(time.Hour * time.Duration(duration)),
+		time.Now().Add(time.Hour * time.Duration(aadapp.Duration)),
 	}
 
 	var clientSecret *[]graphrbac.PasswordCredential
@@ -83,7 +86,7 @@ func (aadp *AzureADApp) CreateServicePrincipal(applicationID string, duration in
 	*clientSecret = append(*clientSecret, newClientSecret)
 
 	spnCreateParam := graphrbac.ServicePrincipalCreateParameters{
-		AppID:               to.StringPtr(applicationID),
+		AppID:               to.StringPtr(aadapp.ClientID),
 		PasswordCredentials: clientSecret,
 	}
 
@@ -92,6 +95,6 @@ func (aadp *AzureADApp) CreateServicePrincipal(applicationID string, duration in
 		// TODO: Implement logger
 	}
 
-	*aadp.ClientSecret = secret
+	aadapp.ClientSecret = secret
 	return spnCreate
 }

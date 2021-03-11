@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: azureidentityterminators.aadpi-terminator.k8s.io
+  name: azureidentityterminators.aadpi-terminator.io
 spec:
-  group: aadpi-terminator.k8s.io
+  group: aadpi-terminator.io
   names:
     kind: AzureIdentityTerminator
     listKind: AzureIdentityTerminatorList
@@ -40,19 +40,18 @@ spec:
             properties:
               aadRegistrationName:
                 type: string
-              azureIdentity:
+              azureIdentityName:
                 type: string
+              clientSecretDuration:
+                format: int64
+                type: integer
               podSelector:
                 type: string
-              spnSecretName:
-                type: string
-              useMSI:
-                type: boolean
             required:
             - aadRegistrationName
-            - azureIdentity
+            - azureIdentityName
+            - clientSecretDuration
             - podSelector
-            - useMSI
             type: object
           status:
             description: AzureIdentityTerminatorStatus defines the observed state
@@ -61,13 +60,10 @@ spec:
               azureIdentityBinding:
                 type: string
               clientSecretExpiration:
+                format: date-time
                 type: string
               clientSecretExpired:
                 type: boolean
-            required:
-            - azureIdentityBinding
-            - clientSecretExpiration
-            - clientSecretExpired
             type: object
         type: object
     served: true

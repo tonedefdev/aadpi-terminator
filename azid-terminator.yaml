@@ -1,0 +1,10 @@
+apiVersion: aadpi-terminator.io/v1alpha1
+kind: AzureIdentityTerminator
+metadata:
+  name: azureidentityterminator-sample
+spec:
+  aadRegistrationName: test-registration
+  azureIdentityName: test-azure-identity-name
+  podSelector: test-pod
+  clientSecretDuration: 12
+

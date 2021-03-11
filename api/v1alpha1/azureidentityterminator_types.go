@@ -30,9 +30,9 @@ type AzureIdentityTerminatorSpec struct {
 
 // AzureIdentityTerminatorStatus defines the observed state of AzureIdentityTerminator
 type AzureIdentityTerminatorStatus struct {
-	AzureIdentityBinding   string `json:"azureIdentityBinding"`
-	ClientSecretExpired    bool   `json:"clientSecretExpired"`
-	ClientSecretExpiration string `json:"clientSecretExpiration"`
+	AzureIdentityBinding   string       `json:"azureIdentityBinding,omitempty"`
+	ClientSecretExpired    bool         `json:"clientSecretExpired,omitempty"`
+	ClientSecretExpiration *metav1.Time `json:"clientSecretExpiration,omitempty"`
 }
 
 // +kubebuilder:object:root=true

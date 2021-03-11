@@ -1,4 +1,4 @@
-apiVersion: aadpi-terminator.k8s.io/v1alpha1
+apiVersion: aadpi-terminator.io/v1alpha1
 kind: AzureIdentityTerminator
 metadata:
   name: azureidentityterminator-sample

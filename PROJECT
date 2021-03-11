@@ -1,4 +1,4 @@
-domain: k8s.io
+domain: io
 layout: go.kubebuilder.io/v3
 projectName: aadpi-terminator
 repo: github.com/tonedefdev/aadpi-terminator

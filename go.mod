@@ -12,9 +12,9 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/google/uuid v1.2.0
 	github.com/onsi/ginkgo v1.15.1
-	github.com/onsi/gomega v1.11.1
+	github.com/onsi/gomega v1.11.0
 	k8s.io/api v0.20.4
 	k8s.io/apimachinery v0.20.4
-	k8s.io/client-go v1.52
+	k8s.io/client-go v0.20.2
 	sigs.k8s.io/controller-runtime v0.8.3
 )

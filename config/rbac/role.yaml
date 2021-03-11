@@ -7,7 +7,19 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - aadpi-terminator.io
   resources:
   - azureidentityterminators
   verbs:
@@ -19,16 +31,29 @@ rules:
   - update
   - watch
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - aadpi-terminator.io
   resources:
   - azureidentityterminators/finalizers
   verbs:
   - update
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - aadpi-terminator.io
   resources:
   - azureidentityterminators/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - aadpodidentity.k8s.io
+  resources:
+  - azureidentities
+  - azureidentitybindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

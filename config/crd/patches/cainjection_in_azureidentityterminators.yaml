@@ -4,4 +4,4 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
-  name: azureidentityterminators.aadpi-terminator.k8s.io
+  name: azureidentityterminators.aadpi-terminator.io

@@ -2,24 +2,16 @@ package azuread
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	iam "github.com/tonedefdev/aadpi-terminator/pkg/iam"
+	config "github.com/tonedefdev/aadpi-terminator/pkg/internal"
 )
-
-// CreateApp interface contains methods to create Azure AD Application resources
-type CreateApp interface {
-	CreateAzureADApp() graphrbac.Application
-	CreateServicePrincipal() graphrbac.ServicePrincipal
-	Logger() logr.Logger
-}
 
 // App struct defines an Azure AD Application
 type App struct {
@@ -31,62 +23,60 @@ type App struct {
 	TenantID     string
 }
 
-func newAuthorizer() autorest.Authorizer {
-	authorizer, err := auth.NewAuthorizerFromEnvironment()
-	if err != nil {
-		return nil
-	}
-	return authorizer
-}
-
 func generateRandomSecret() string {
 	randomPassword := uuid.New()
 	return randomPassword.String()
 }
 
-// Logger creates a logging instance
-func (aadApp *App) Logger() logr.Logger {
-	log := aadApp.Log.WithValues("azureidentityterminator", "appregistration")
-	return log
+func getApplicationsClient() graphrbac.ApplicationsClient {
+	appClient := graphrbac.NewApplicationsClient(config.TenantID())
+	a, _ := iam.GetGraphAuthorizer()
+	appClient.Authorizer = a
+	appClient.AddToUserAgent(config.UserAgent())
+	return appClient
+}
+
+func getServicePrincipalClient() graphrbac.ServicePrincipalsClient {
+	spnClient := graphrbac.NewServicePrincipalsClient(config.TenantID())
+	a, _ := iam.GetGraphAuthorizer()
+	spnClient.Authorizer = a
+	spnClient.AddToUserAgent(config.UserAgent())
+	return spnClient
 }
 
 // CreateAzureADApp creates an Azure AD Application
-func (aadApp *App) CreateAzureADApp() graphrbac.Application {
-	log := aadApp.Logger()
-	appClient := graphrbac.NewApplicationsClient(os.Getenv("AZURE_TENANT_ID"))
-	appClient.Authorizer = newAuthorizer()
+func (aadApp *App) CreateAzureADApp() (graphrbac.Application, error) {
+	ctx := context.Background()
+	appClient := getApplicationsClient()
 
 	appCreateParam := graphrbac.ApplicationCreateParameters{
 		DisplayName:             to.StringPtr(aadApp.DisplayName),
 		AvailableToOtherTenants: to.BoolPtr(false),
 	}
 
-	appReg, err := appClient.Create(context.Background(), appCreateParam)
+	appReg, err := appClient.Create(ctx, appCreateParam)
 	if err != nil {
-		log.Error(err, "AzureIdentityTerminator Azure AD App Registration Failed", appCreateParam.DisplayName)
+		return appReg, err
 	}
 
-	aadApp.TenantID = os.Getenv("AZURE_TENANT_ID")
+	aadApp.TenantID = config.TenantID()
 	aadApp.ClientID = *appReg.AppID
-	return appReg
+	return appReg, err
 }
 
 // CreateServicePrincipal generates a service princiapl for an AzureIdentityTerminator resource
-func (aadApp *App) CreateServicePrincipal() graphrbac.ServicePrincipal {
-	log := aadApp.Logger()
-	spnClient := graphrbac.NewServicePrincipalsClient(os.Getenv("AZURE_TENANT_ID"))
-	spnClient.Authorizer = newAuthorizer()
+func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) {
+	//log := aadApp.Log.WithValues("azureidentityterminator", "appregistration")
+	ctx := context.Background()
+	spnClient := getServicePrincipalClient()
 	secret := generateRandomSecret()
 
-	var now *date.Time
-	var expiration *date.Time
-
-	*now = date.Time{time.Now()}
-	*expiration = date.Time{
+	now := &date.Time{time.Now()}
+	expiration := &date.Time{
 		time.Now().Add(time.Hour * time.Duration(aadApp.Duration)),
 	}
 
-	var clientSecret *[]graphrbac.PasswordCredential
+	var clientSecret []graphrbac.PasswordCredential
 
 	newClientSecret := graphrbac.PasswordCredential{
 		StartDate: now,
@@ -94,18 +84,18 @@ func (aadApp *App) CreateServicePrincipal() graphrbac.ServicePrincipal {
 		Value:     to.StringPtr(secret),
 	}
 
-	*clientSecret = append(*clientSecret, newClientSecret)
+	append(clientSecret, newClientSecret)
 
 	spnCreateParam := graphrbac.ServicePrincipalCreateParameters{
 		AppID:               to.StringPtr(aadApp.ClientID),
 		PasswordCredentials: clientSecret,
 	}
 
-	spnCreate, err := spnClient.Create(context.Background(), spnCreateParam)
+	spnCreate, err := spnClient.Create(ctx, spnCreateParam)
 	if err != nil {
-		log.Error(err, "AzureIdentityTerminator Service Principal Creation failed", spnCreateParam.AppID)
+		return spnCreate, err
 	}
 
 	aadApp.ClientSecret = secret
-	return spnCreate
+	return spnCreate, err
 }

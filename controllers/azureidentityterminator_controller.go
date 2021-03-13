@@ -17,8 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	aadpodv1 "github.com/Azure/aad-pod-identity/pkg/apis/aadpodidentity/v1"
 	"github.com/Azure/go-autorest/autorest/to"
+	aadpodv1 "github.com/tonedefdev/aad-pod-identity/pkg/apis/aadpodidentity/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +52,7 @@ type AzureIdentityTerminatorReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("azureidentityterminator", req.NamespacedName)
+	log := r.Log.WithValues("AzureIdentityTerminator", req.NamespacedName)
 	ctx = context.Background()
 
 	// Fetch the AzureIdentityTerminator instance
@@ -75,9 +75,13 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 	err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, aadID)
 	if err != nil && errors.IsNotFound(err) {
 
+		log.Info("Creating a new Azure AD App Registration", "aadRegistrationName", terminator.Spec.AADRegistrationName)
 		// Create the Azure AD Application that the AzureIdentity will leverage
-		aadAppRegistration := r.CreateApp(terminator.Spec.AADRegistrationName, terminator.Spec.ClientSecretDuration)
-		log.Info("Creating a new Azure AD App Registration", "ClientID", aadAppRegistration.ClientID, "Display Name", aadAppRegistration.DisplayName)
+		aadAppRegistration, err := r.CreateApp(terminator)
+		if err != nil {
+			r.Log.Error(err, "Failed to create azuread application")
+			return ctrl.Result{}, err
+		}
 
 		secret := &corev1.Secret{}
 		err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, secret)
@@ -111,7 +115,7 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{Requeue: true}, nil
 
 	} else if err != nil {
-		log.Error(err, "Failed to get Deployment")
+		log.Error(err, "Failed to get AzureIdentity")
 		return ctrl.Result{}, err
 	}
 
@@ -119,14 +123,25 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 }
 
 // CreateApp creates the Azure AD Application, SPN, and returns the necessary information
-func (r *AzureIdentityTerminatorReconciler) CreateApp(aadRegName string, duration int64) *azuread.App {
-	app := &azuread.App{
-		DisplayName: aadRegName,
-		Duration:    duration,
+func (r *AzureIdentityTerminatorReconciler) CreateApp(t *terminatorv1alpha1.AzureIdentityTerminator) (*azuread.App, error) {
+	aadApp := &azuread.App{
+		DisplayName: t.Spec.AADRegistrationName,
+		Duration:    t.Spec.ClientSecretDuration,
 	}
-	app.CreateAzureADApp()
-	app.CreateServicePrincipal()
-	return app
+
+	_, err := aadApp.CreateAzureADApp()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = aadApp.CreateServicePrincipal()
+	{
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return aadApp, err
 }
 
 // AzureIdentityManifest creates the AzureIdentity manifest
@@ -197,5 +212,6 @@ func (r *AzureIdentityTerminatorReconciler) SecretManfiest(t *terminatorv1alpha1
 func (r *AzureIdentityTerminatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminatorv1alpha1.AzureIdentityTerminator{}).
+		Owns(&aadpodv1.AzureIdentity{}).
 		Complete(r)
 }

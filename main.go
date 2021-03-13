@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	aadpodv1 "github.com/tonedefdev/aad-pod-identity/pkg/apis/aadpodidentity/v1"
 	aadpiterminatorv1alpha1 "github.com/tonedefdev/aadpi-terminator/api/v1alpha1"
 	"github.com/tonedefdev/aadpi-terminator/controllers"
 	// +kubebuilder:scaffold:imports
@@ -44,6 +45,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(aadpiterminatorv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(aadpodv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

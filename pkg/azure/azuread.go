@@ -74,7 +74,7 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 
 	duration, err := time.ParseDuration(aadApp.Duration)
 	if err != nil {
-
+		// TODO: Implement error handling
 	}
 
 	now := &date.Time{time.Now()}

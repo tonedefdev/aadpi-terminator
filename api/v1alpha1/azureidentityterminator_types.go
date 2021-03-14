@@ -30,8 +30,8 @@ type AzureIdentityTerminatorSpec struct {
 
 // AzureIdentityTerminatorStatus defines the observed state of AzureIdentityTerminator
 type AzureIdentityTerminatorStatus struct {
+	ObjectID               *string      `json:"objectID,omitempty"`
 	AzureIdentityBinding   string       `json:"azureIdentityBinding,omitempty"`
-	ClientSecretExpired    bool         `json:"clientSecretExpired,omitempty"`
 	ClientSecretExpiration *metav1.Time `json:"clientSecretExpiration,omitempty"`
 }
 

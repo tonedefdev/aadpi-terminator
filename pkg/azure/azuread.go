@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	iam "github.com/tonedefdev/aadpi-terminator/pkg/iam"
 	config "github.com/tonedefdev/aadpi-terminator/pkg/internal"
@@ -15,12 +15,13 @@ import (
 
 // App struct defines an Azure AD Application
 type App struct {
-	ClientID     string
-	ClientSecret string
-	DisplayName  string
-	Duration     int64
-	Log          logr.Logger
-	TenantID     string
+	ClientID               string
+	ClientSecret           string
+	ClientSecretExpiration date.Time
+	DisplayName            string
+	Duration               int64
+	ObjectID               string
+	TenantID               string
 }
 
 func generateRandomSecret() string {
@@ -61,12 +62,12 @@ func (aadApp *App) CreateAzureADApp() (graphrbac.Application, error) {
 
 	aadApp.TenantID = config.TenantID()
 	aadApp.ClientID = *appReg.AppID
+	aadApp.ObjectID = *appReg.ObjectID
 	return appReg, err
 }
 
 // CreateServicePrincipal generates a service princiapl for an AzureIdentityTerminator resource
 func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) {
-	//log := aadApp.Log.WithValues("azureidentityterminator", "appregistration")
 	ctx := context.Background()
 	spnClient := getServicePrincipalClient()
 	secret := generateRandomSecret()
@@ -97,5 +98,19 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 	}
 
 	aadApp.ClientSecret = secret
+	aadApp.ClientSecretExpiration = *expiration
 	return spnCreate, err
+}
+
+// DeleteAzureApp deletes the requested Azure AD application
+func (aadApp *App) DeleteAzureApp() (autorest.Response, error) {
+	ctx := context.Background()
+	appClient := getApplicationsClient()
+
+	appDelete, err := appClient.Delete(ctx, aadApp.ObjectID)
+	if err != nil {
+		return appDelete, err
+	}
+
+	return appDelete, err
 }

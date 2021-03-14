@@ -62,8 +62,8 @@ spec:
               clientSecretExpiration:
                 format: date-time
                 type: string
-              clientSecretExpired:
-                type: boolean
+              objectID:
+                type: string
             type: object
         type: object
     served: true

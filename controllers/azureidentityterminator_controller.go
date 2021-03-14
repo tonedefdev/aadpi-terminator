@@ -71,31 +71,69 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
+	finalizer := "finalizer.aadpi-terminator.io"
+
+	// Examine DeletionTimestamp to determine if object is under deletion
+	if terminator.ObjectMeta.DeletionTimestamp.IsZero() {
+		log.Info("Adding finalizer for when object is scheduled for deletion", "AzureIdentityTerminator.Name", terminator.Name)
+		if !containsString(terminator.ObjectMeta.Finalizers, finalizer) {
+			// The object is not being deleted, so if it does not have our finalizer,
+			// then lets add the finalizer and update the object. This is equivalent to
+			// registering our finalizer.
+			terminator.ObjectMeta.Finalizers = append(terminator.ObjectMeta.Finalizers, finalizer)
+			if err := r.Update(ctx, terminator); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	} else {
+		// The object is being deleted
+		log.Info("Deleting the object and its associated resources", "AzureIdentityTerminator.Name", terminator.Name)
+		if containsString(terminator.ObjectMeta.Finalizers, finalizer) {
+			if err := r.DeleteResources(terminator); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			terminator.ObjectMeta.Finalizers = removeString(terminator.ObjectMeta.Finalizers, finalizer)
+			if err := r.Update(ctx, terminator); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			log.Info("Successfully deleted all resources", "AzureIdentityTerminator.Name", terminator.Name)
+			return ctrl.Result{}, nil
+		}
+	}
+
 	aadID := &aadpodv1.AzureIdentity{}
 	err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, aadID)
 	if err != nil && errors.IsNotFound(err) {
 
-		log.Info("Creating a new Azure AD App Registration", "aadRegistrationName", terminator.Spec.AADRegistrationName)
 		// Create the Azure AD Application that the AzureIdentity will leverage
+		log.Info("Creating a new Azure AD App Registration", "aadRegistrationName", terminator.Spec.AADRegistrationName)
 		aadAppRegistration, err := r.CreateApp(terminator)
 		if err != nil {
 			r.Log.Error(err, "Failed to create azuread application")
 			return ctrl.Result{}, err
 		}
 
+		log.Info("Successfully created Azure AD Application registration and Service Principal", "clientID", aadAppRegistration.ClientID)
+
 		secret := &corev1.Secret{}
 		err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, secret)
 		if err != nil && errors.IsNotFound(err) {
 
 			// Create Secret that will contain the ClientSecret for the AzureIdentity
+			log.Info("Creating secret for AzureIdentityBinding", "clientID", aadAppRegistration.ClientID)
 			sec := r.SecretManfiest(terminator, aadAppRegistration)
 			err = r.Create(ctx, sec)
 			if err != nil {
-				log.Error(err, "Failed to create new Secret", "Secret.Namespace", sec.Namespace, "Secret.Name", sec.Name)
+				log.Error(err, "Failed to create new Secret", "Secret.Name", sec.Name)
 				return ctrl.Result{}, err
 			}
 
+			log.Info("Successfully created Secret", "Secret.Name", sec.Name)
+
 			// Create AzureIdentity
+			log.Info("Creating AzureIdentity", "AzureIdentity.Name", terminator.Name)
 			azID := r.AzureIdentityManifest(terminator, aadAppRegistration)
 			err = r.Create(ctx, azID)
 			if err != nil {
@@ -103,15 +141,35 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 				return ctrl.Result{}, err
 			}
 
+			log.Info("Successfully created AzureIdentity", "AzureIdentity.Name", terminator.Name)
+
 			// Create AzureIdentityBinding
+			log.Info("Creating AzureIdentityBinding", "AzureIdentityBinding.Name", terminator.Name)
 			azIDBinding := r.AzureIdentityBindingManifest(terminator, azID)
 			err = r.Create(ctx, azIDBinding)
 			if err != nil {
 				log.Error(err, "Failed to create AzureIdentityBinding", "AzureIdentityBinding.Name", azIDBinding.Name)
 			}
+
+			log.Info("Sucessfully created AzureIdentityBinding", "AzureIdentityBinding.Name", terminator.Name)
 		}
 
 		// AzureIdentity and AzureIdentityBinding created with new Azure AD App successfully - return and requeue
+		log.Info("Successfully created AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
+
+		// Update AzureIdentityTerminator status field
+		terminator.Status.AzureIdentityBinding = terminator.Spec.AzureIdentityName
+		terminator.Status.ClientSecretExpiration = (*v1.Time)(&aadAppRegistration.ClientSecretExpiration)
+		terminator.Status.ObjectID = &aadAppRegistration.ObjectID
+
+		log.Info("Updating status of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
+		err = r.Status().Update(ctx, terminator)
+		if err != nil {
+			log.Error(err, "Failed to update status of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
+		}
+
+		log.Info("Successfully updated statues of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
+
 		return ctrl.Result{Requeue: true}, nil
 
 	} else if err != nil {
@@ -135,13 +193,78 @@ func (r *AzureIdentityTerminatorReconciler) CreateApp(t *terminatorv1alpha1.Azur
 	}
 
 	_, err = aadApp.CreateServicePrincipal()
-	{
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	return aadApp, err
+}
+
+// DeleteResources deletes all the resources created by the AzureIdentityTerminator
+func (r *AzureIdentityTerminatorReconciler) DeleteResources(t *terminatorv1alpha1.AzureIdentityTerminator) error {
+	ctx := context.Background()
+	aadApp := &azuread.App{
+		ObjectID: *t.Status.ObjectID,
+	}
+
+	// Delete AzureIdentity
+	err := r.Delete(ctx, &aadpodv1.AzureIdentity{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "AzureIdentity",
+			APIVersion: "aadpodidentity.k8s.io",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Namespace,
+		},
+	})
+
+	if err != nil {
+		r.Log.Error(err, "Failed to delete AzureIdentity", "AzureIdentity.Name", t.Name)
+		return err
+	}
+
+	// Delete AzureIdentityBinding
+	err = r.Delete(ctx, &aadpodv1.AzureIdentityBinding{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "AzureIdentityBinding",
+			APIVersion: "aadpodidentity.k8s.io",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Namespace,
+		},
+	})
+
+	if err != nil {
+		r.Log.Error(err, "Failed to delete AzureIdentityBinding", "AzureIdentityBinding.Name", t.Name)
+		return err
+	}
+
+	// Delete Secret created by AzureIdentityTerminator
+	err = r.Delete(ctx, &corev1.Secret{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Namespace,
+		},
+	})
+
+	if err != nil {
+		r.Log.Error(err, "Failed to delete Secret", "Secret.Name", t.Name)
+		return err
+	}
+
+	// Delete Azure AD App
+	_, err = aadApp.DeleteAzureApp()
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 // AzureIdentityManifest creates the AzureIdentity manifest
@@ -208,10 +331,32 @@ func (r *AzureIdentityTerminatorReconciler) SecretManfiest(t *terminatorv1alpha1
 	return secret
 }
 
+// Helper functions to check and remove string from a slice of strings.
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item == s {
+			continue
+		}
+		result = append(result, item)
+	}
+	return
+}
+
 // SetupWithManager sets up the reconciler management
 func (r *AzureIdentityTerminatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminatorv1alpha1.AzureIdentityTerminator{}).
 		Owns(&aadpodv1.AzureIdentity{}).
+		Owns(&aadpodv1.AzureIdentityBinding{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
 }

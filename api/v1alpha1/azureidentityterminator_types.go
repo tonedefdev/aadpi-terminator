@@ -24,8 +24,8 @@ import (
 type AzureIdentityTerminatorSpec struct {
 	AADRegistrationName  string `json:"aadRegistrationName"`
 	AzureIdentityName    string `json:"azureIdentityName"`
-	PodSelector          string `json:"podSelector"`
 	ClientSecretDuration int64  `json:"clientSecretDuration"`
+	PodSelector          string `json:"podSelector"`
 }
 
 // AzureIdentityTerminatorStatus defines the observed state of AzureIdentityTerminator

@@ -50,6 +50,7 @@ func TenantID() string {
 
 // SubscriptionID is a target subscription for Azure resources.
 func SubscriptionID() string {
+	subscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
 	return subscriptionID
 }
 

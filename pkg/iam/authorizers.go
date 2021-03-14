@@ -10,10 +10,7 @@ import (
 )
 
 var (
-	armAuthorizer      autorest.Authorizer
-	batchAuthorizer    autorest.Authorizer
-	graphAuthorizer    autorest.Authorizer
-	keyvaultAuthorizer autorest.Authorizer
+	graphAuthorizer autorest.Authorizer
 )
 
 // OAuthGrantType specifies which grant type to use.

@@ -60,9 +60,9 @@ func (aadApp *App) CreateAzureADApp() (graphrbac.Application, error) {
 		return appReg, err
 	}
 
-	aadApp.TenantID = config.TenantID()
 	aadApp.ClientID = *appReg.AppID
 	aadApp.ObjectID = *appReg.ObjectID
+	aadApp.TenantID = config.TenantID()
 	return appReg, err
 }
 

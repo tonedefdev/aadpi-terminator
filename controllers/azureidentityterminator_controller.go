@@ -124,8 +124,7 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 			// Create Secret that will contain the ClientSecret for the AzureIdentity
 			log.Info("Creating secret for AzureIdentityBinding", "clientID", aadAppRegistration.ClientID)
 			sec := r.SecretManfiest(terminator, aadAppRegistration)
-			err = r.Create(ctx, sec)
-			if err != nil {
+			if err = r.Create(ctx, sec); err != nil {
 				log.Error(err, "Failed to create new Secret", "Secret.Name", sec.Name)
 				return ctrl.Result{}, err
 			}
@@ -135,8 +134,7 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 			// Create AzureIdentity
 			log.Info("Creating AzureIdentity", "AzureIdentity.Name", terminator.Name)
 			azID := r.AzureIdentityManifest(terminator, aadAppRegistration)
-			err = r.Create(ctx, azID)
-			if err != nil {
+			if err = r.Create(ctx, azID); err != nil {
 				log.Error(err, "Failed to create AzureIdentity", "AzureIdentity.Name", azID.Name)
 				return ctrl.Result{}, err
 			}
@@ -146,16 +144,13 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 			// Create AzureIdentityBinding
 			log.Info("Creating AzureIdentityBinding", "AzureIdentityBinding.Name", terminator.Name)
 			azIDBinding := r.AzureIdentityBindingManifest(terminator, azID)
-			err = r.Create(ctx, azIDBinding)
-			if err != nil {
+			if err = r.Create(ctx, azIDBinding); err != nil {
 				log.Error(err, "Failed to create AzureIdentityBinding", "AzureIdentityBinding.Name", azIDBinding.Name)
+				return ctrl.Result{}, err
 			}
 
 			log.Info("Sucessfully created AzureIdentityBinding", "AzureIdentityBinding.Name", terminator.Name)
 		}
-
-		// AzureIdentity and AzureIdentityBinding created with new Azure AD App successfully - return and requeue
-		log.Info("Successfully created AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
 
 		// Update AzureIdentityTerminator status field
 		terminator.Status.AzureIdentityBinding = terminator.Spec.AzureIdentityName
@@ -163,13 +158,15 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 		terminator.Status.ObjectID = &aadAppRegistration.ObjectID
 
 		log.Info("Updating status of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
-		err = r.Status().Update(ctx, terminator)
-		if err != nil {
+		if err = r.Status().Update(ctx, terminator); err != nil {
 			log.Error(err, "Failed to update status of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
+			return ctrl.Result{}, err
 		}
 
 		log.Info("Successfully updated statues of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
 
+		// AzureIdentity, AzureIdentityBinding, Azure AD App, Secret, and AzureIdentityTerminator created successfully - return and requeue
+		log.Info("Successfully created AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
 		return ctrl.Result{Requeue: true}, nil
 
 	} else if err != nil {
@@ -178,6 +175,26 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// Helper functions to check and remove string from a slice of strings.
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item == s {
+			continue
+		}
+		result = append(result, item)
+	}
+	return
 }
 
 // CreateApp creates the Azure AD Application, SPN, and returns the necessary information
@@ -280,6 +297,7 @@ func (r *AzureIdentityTerminatorReconciler) AzureIdentityManifest(t *terminatorv
 		},
 		Spec: aadpodv1.AzureIdentitySpec{
 			Type:     aadpodv1.IdentityType(1),
+			TenantID: app.TenantID,
 			ClientID: app.ClientID,
 			ClientPassword: corev1.SecretReference{
 				Name:      t.Name,
@@ -322,33 +340,13 @@ func (r *AzureIdentityTerminatorReconciler) SecretManfiest(t *terminatorv1alpha1
 			Name:      t.Name,
 			Namespace: t.Namespace,
 		},
-		Immutable: to.BoolPtr(true),
+		Immutable: to.BoolPtr(false),
 		StringData: map[string]string{
-			app.ClientID: app.ClientSecret,
+			"clientSecret": app.ClientSecret,
 		},
 	}
 
 	return secret
-}
-
-// Helper functions to check and remove string from a slice of strings.
-func containsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-	return false
-}
-
-func removeString(slice []string, s string) (result []string) {
-	for _, item := range slice {
-		if item == s {
-			continue
-		}
-		result = append(result, item)
-	}
-	return
 }
 
 // SetupWithManager sets up the reconciler management

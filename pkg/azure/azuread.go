@@ -76,7 +76,7 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 		time.Now().Add(time.Hour * time.Duration(aadApp.Duration)),
 	}
 
-	var clientSecret []graphrbac.PasswordCredential
+	var clientSecret = []graphrbac.PasswordCredential{}
 
 	newClientSecret := graphrbac.PasswordCredential{
 		StartDate: now,
@@ -84,11 +84,11 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 		Value:     to.StringPtr(secret),
 	}
 
-	append(clientSecret, newClientSecret)
+	clientSecret = append(clientSecret, newClientSecret)
 
 	spnCreateParam := graphrbac.ServicePrincipalCreateParameters{
 		AppID:               to.StringPtr(aadApp.ClientID),
-		PasswordCredentials: clientSecret,
+		PasswordCredentials: &clientSecret,
 	}
 
 	spnCreate, err := spnClient.Create(ctx, spnCreateParam)

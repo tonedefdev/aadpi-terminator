@@ -43,8 +43,7 @@ spec:
               azureIdentityName:
                 type: string
               clientSecretDuration:
-                format: int64
-                type: integer
+                type: string
               podSelector:
                 type: string
             required:

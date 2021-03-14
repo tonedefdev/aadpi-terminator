@@ -19,7 +19,7 @@ type App struct {
 	ClientSecret           string
 	ClientSecretExpiration date.Time
 	DisplayName            string
-	Duration               int64
+	Duration               string
 	ObjectID               string
 	TenantID               string
 }
@@ -72,9 +72,14 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 	spnClient := getServicePrincipalClient()
 	secret := generateRandomSecret()
 
+	duration, err := time.ParseDuration(aadApp.Duration)
+	if err != nil {
+
+	}
+
 	now := &date.Time{time.Now()}
 	expiration := &date.Time{
-		time.Now().Add(time.Hour * time.Duration(aadApp.Duration)),
+		time.Now().Add(duration),
 	}
 
 	var clientSecret = []graphrbac.PasswordCredential{}

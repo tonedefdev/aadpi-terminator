@@ -24,7 +24,7 @@ import (
 type AzureIdentityTerminatorSpec struct {
 	AADRegistrationName  string `json:"aadRegistrationName"`
 	AzureIdentityName    string `json:"azureIdentityName"`
-	ClientSecretDuration int64  `json:"clientSecretDuration"`
+	ClientSecretDuration string `json:"clientSecretDuration"`
 	PodSelector          string `json:"podSelector"`
 }
 

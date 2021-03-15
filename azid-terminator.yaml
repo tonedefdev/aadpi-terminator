@@ -7,4 +7,4 @@ spec:
   aadRegistrationName: test-registration-namespace
   azureIdentityName: test-azure-identity-name2
   podSelector: test-pod2
-  clientSecretDuration: 12h5m5s
+  clientSecretDuration: 2m

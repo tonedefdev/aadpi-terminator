@@ -77,9 +77,11 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 		// TODO: Implement error handling
 	}
 
-	now := &date.Time{time.Now()}
+	now := &date.Time{
+		Time: time.Now(),
+	}
 	expiration := &date.Time{
-		time.Now().Add(duration),
+		Time: time.Now().Add(duration),
 	}
 
 	var clientSecret = []graphrbac.PasswordCredential{}

@@ -17,14 +17,13 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+
 	"github.com/Azure/go-autorest/autorest/to"
-	aadpodv1 "github.com/tonedefdev/aad-pod-identity/pkg/apis/aadpodidentity/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"context"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	aadpodv1 "github.com/tonedefdev/aad-pod-identity/pkg/apis/aadpodidentity/v1"
 	terminatorv1alpha1 "github.com/tonedefdev/aadpi-terminator/api/v1alpha1"
 	azuread "github.com/tonedefdev/aadpi-terminator/pkg/azure"
 )

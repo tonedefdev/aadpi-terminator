@@ -71,9 +71,8 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 		return ctrl.Result{}, err
 	}
 
-	finalizer := "finalizer.aadpi-terminator.io"
-
 	// Examine DeletionTimestamp to determine if object is under deletion
+	finalizer := "finalizer.aadpi-terminator.io"
 	if terminator.ObjectMeta.DeletionTimestamp.IsZero() {
 		log.Info("Adding finalizer for when object is scheduled for deletion", "AzureIdentityTerminator.Name", terminator.Name)
 		if !containsString(terminator.ObjectMeta.Finalizers, finalizer) {

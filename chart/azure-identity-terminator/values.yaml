@@ -1,0 +1,11 @@
+# Default values for azure-identity-terminator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 2
+namespace: azid-terminator-system
+deployment: azid-terminator-controller
+
+secrets:
+  AZURE_CLIENT_ID:
+  AZURE_CLIENT_SECRET:
+  AZURE_TENANT_ID:

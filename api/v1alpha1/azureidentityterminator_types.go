@@ -27,7 +27,7 @@ type AzureIdentityTerminatorSpec struct {
 	ClientSecretDuration string   `json:"clientSecretDuration"`
 	NodeResourceGroupID  string   `json:"nodeResourceGroupID"`
 	PodSelector          string   `json:"podSelector"`
-	SpnTags              []string `json:"spnTags,omitempty"`
+	ServicePrincipalTags []string `json:"servicePrincipalTags,omitempty"`
 }
 
 // AzureIdentityTerminatorStatus defines the observed state of AzureIdentityTerminator

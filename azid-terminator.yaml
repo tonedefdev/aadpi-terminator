@@ -8,3 +8,5 @@ spec:
   nodeResourceGroupID: /subscriptions/7d069d72-e281-4e33-911b-aedadcb4f773/resourceGroups/NetworkWatcherRG
   podSelector: azure-sql
   clientSecretDuration: 720h
+  servicePrincipalTags:
+  - "azure-sql-aks"

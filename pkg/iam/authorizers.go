@@ -24,35 +24,6 @@ const (
 	OAuthGrantTypeDeviceFlow
 )
 
-// GrantType returns what grant type has been configured.
-func grantType() OAuthGrantType {
-	if config.UseDeviceFlow() {
-		return OAuthGrantTypeDeviceFlow
-	}
-	return OAuthGrantTypeServicePrincipal
-}
-
-// GetGraphAuthorizer gets an OAuthTokenAuthorizer for graphrbac API.
-func GetGraphAuthorizer() (autorest.Authorizer, error) {
-	if graphAuthorizer != nil {
-		return graphAuthorizer, nil
-	}
-
-	var a autorest.Authorizer
-	var err error
-
-	a, err = getAuthorizerForResource(grantType(), config.Environment().GraphEndpoint)
-
-	if err == nil {
-		// cache
-		graphAuthorizer = a
-	} else {
-		graphAuthorizer = nil
-	}
-
-	return graphAuthorizer, err
-}
-
 func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autorest.Authorizer, error) {
 	var a autorest.Authorizer
 	var err error
@@ -86,6 +57,35 @@ func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autore
 	}
 
 	return a, err
+}
+
+// GrantType returns what grant type has been configured.
+func grantType() OAuthGrantType {
+	if config.UseDeviceFlow() {
+		return OAuthGrantTypeDeviceFlow
+	}
+	return OAuthGrantTypeServicePrincipal
+}
+
+// GetGraphAuthorizer gets an OAuthTokenAuthorizer for graphrbac API.
+func GetGraphAuthorizer() (autorest.Authorizer, error) {
+	if graphAuthorizer != nil {
+		return graphAuthorizer, nil
+	}
+
+	var a autorest.Authorizer
+	var err error
+
+	a, err = getAuthorizerForResource(grantType(), config.Environment().GraphEndpoint)
+
+	if err == nil {
+		// cache
+		graphAuthorizer = a
+	} else {
+		graphAuthorizer = nil
+	}
+
+	return graphAuthorizer, err
 }
 
 // GetResourceManagementAuthorizer gets an OAuthTokenAuthorizer for Azure Resource Manager

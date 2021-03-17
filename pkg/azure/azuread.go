@@ -25,6 +25,7 @@ type App struct {
 	NodeResourceGroupID    string
 	ObjectID               string
 	ServicePrincipalID     string
+	ServicePrincipalTags   []string
 	TenantID               string
 }
 
@@ -33,7 +34,6 @@ func createRoleAssignment(aadApp *App) error {
 	ctx := context.Background()
 	sub := config.SubscriptionID()
 	reader := "/subscriptions/" + sub + "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
-	fmt.Println(aadApp.ServicePrincipalID)
 
 	roleAssignmentsClient, _ := getRoleAssignmentsClient()
 	_, err := roleAssignmentsClient.Create(
@@ -131,6 +131,7 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 	spnCreateParam := graphrbac.ServicePrincipalCreateParameters{
 		AppID:               to.StringPtr(aadApp.ClientID),
 		PasswordCredentials: &clientSecret,
+		Tags:                &aadApp.ServicePrincipalTags,
 	}
 
 	spnCreate, err := spnClient.Create(ctx, spnCreateParam)

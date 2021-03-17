@@ -65,7 +65,7 @@ spec:
                 type: string
               podSelector:
                 type: string
-              spnTags:
+              servicePrincipalTags:
                 items:
                   type: string
                 type: array

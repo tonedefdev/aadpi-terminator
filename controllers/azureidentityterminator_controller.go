@@ -199,8 +199,9 @@ func removeString(slice []string, s string) (result []string) {
 // CreateApp creates the Azure AD Application, SPN, and returns the necessary information
 func (r *AzureIdentityTerminatorReconciler) CreateApp(t *terminatorv1alpha1.AzureIdentityTerminator) (*azuread.App, error) {
 	aadApp := &azuread.App{
-		DisplayName: t.Spec.AADRegistrationName,
-		Duration:    t.Spec.ClientSecretDuration,
+		DisplayName:         t.Spec.AADRegistrationName,
+		Duration:            t.Spec.ClientSecretDuration,
+		NodeResourceGroupID: t.Spec.NodeResourceGroupID,
 	}
 
 	_, err := aadApp.CreateAzureADApp()

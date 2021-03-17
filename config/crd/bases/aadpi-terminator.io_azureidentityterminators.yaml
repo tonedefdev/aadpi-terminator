@@ -16,7 +16,24 @@ spec:
     singular: azureidentityterminator
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: The name of the Azure AD Application registered
+      jsonPath: .spec.aadRegistrationName
+      name: AADApplication
+      type: string
+    - description: The life time of the ClientSecret
+      jsonPath: .spec.clientSecretDuration
+      name: ClientSecretDuration
+      type: string
+    - description: The time the ClientSecret will expire
+      jsonPath: .status.clientSecretExpiration
+      name: ClientSecretExp
+      type: string
+    - description: The selector that will bind pods to the AzureIdentityBinding
+      jsonPath: .spec.podSelector
+      name: PodSelector
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: AzureIdentityTerminator is the Schema for the azureidentityterminators
@@ -44,12 +61,19 @@ spec:
                 type: string
               clientSecretDuration:
                 type: string
+              nodeResourceGroupID:
+                type: string
               podSelector:
                 type: string
+              spnTags:
+                items:
+                  type: string
+                type: array
             required:
             - aadRegistrationName
             - azureIdentityName
             - clientSecretDuration
+            - nodeResourceGroupID
             - podSelector
             type: object
           status:

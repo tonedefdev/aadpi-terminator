@@ -6,6 +6,7 @@ namespace: azid-terminator-system
 deployment: azid-terminator-controller
 
 secrets:
-  AZURE_CLIENT_ID:
-  AZURE_CLIENT_SECRET:
-  AZURE_TENANT_ID:
+  azureClientID:
+  azureClientSecret:
+  azureSubscriptionID:
+  azureTenantID:

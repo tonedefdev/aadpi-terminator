@@ -2,8 +2,10 @@ package azuread
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/services/authorization/mgmt/2015-07-01/authorization"
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
@@ -20,8 +22,32 @@ type App struct {
 	ClientSecretExpiration date.Time
 	DisplayName            string
 	Duration               string
+	NodeResourceGroupID    string
 	ObjectID               string
+	ServicePrincipalID     string
 	TenantID               string
+}
+
+// Adds the provided SPN to the 'Reader' role for the AKS cluster node resource group
+func createRoleAssignment(aadApp *App) error {
+	ctx := context.Background()
+	sub := config.SubscriptionID()
+	reader := "/subscriptions/" + sub + "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
+	fmt.Println(aadApp.ServicePrincipalID)
+
+	roleAssignmentsClient, _ := getRoleAssignmentsClient()
+	_, err := roleAssignmentsClient.Create(
+		ctx,
+		aadApp.NodeResourceGroupID,
+		uuid.New().String(),
+		authorization.RoleAssignmentCreateParameters{
+			Properties: &authorization.RoleAssignmentProperties{
+				PrincipalID:      to.StringPtr(aadApp.ServicePrincipalID),
+				RoleDefinitionID: to.StringPtr(reader),
+			},
+		})
+
+	return err
 }
 
 func generateRandomSecret() string {
@@ -35,6 +61,14 @@ func getApplicationsClient() graphrbac.ApplicationsClient {
 	appClient.Authorizer = a
 	appClient.AddToUserAgent(config.UserAgent())
 	return appClient
+}
+
+func getRoleAssignmentsClient() (authorization.RoleAssignmentsClient, error) {
+	roleClient := authorization.NewRoleAssignmentsClient(config.SubscriptionID())
+	a, _ := iam.GetResourceManagementAuthorizer()
+	roleClient.Authorizer = a
+	roleClient.AddToUserAgent(config.UserAgent())
+	return roleClient, nil
 }
 
 func getServicePrincipalClient() graphrbac.ServicePrincipalsClient {
@@ -106,6 +140,17 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 
 	aadApp.ClientSecret = secret
 	aadApp.ClientSecretExpiration = *expiration
+	aadApp.ServicePrincipalID = *spnCreate.ObjectID
+
+	for {
+		err = createRoleAssignment(aadApp)
+		if err == nil {
+			break
+		} else {
+			fmt.Println(err)
+		}
+	}
+
 	return spnCreate, err
 }
 

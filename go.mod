@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/Azure/aad-pod-identity v1.7.4 // indirect
-	github.com/Azure/azure-sdk-for-go v52.3.1+incompatible
+	github.com/Azure/azure-sdk-for-go v52.4.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.18
 	github.com/Azure/go-autorest/autorest/adal v0.9.13
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.7

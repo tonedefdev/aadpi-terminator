@@ -22,10 +22,12 @@ import (
 
 // AzureIdentityTerminatorSpec defines the desired state of AzureIdentityTerminator
 type AzureIdentityTerminatorSpec struct {
-	AADRegistrationName  string `json:"aadRegistrationName"`
-	AzureIdentityName    string `json:"azureIdentityName"`
-	ClientSecretDuration string `json:"clientSecretDuration"`
-	PodSelector          string `json:"podSelector"`
+	AADRegistrationName  string   `json:"aadRegistrationName"`
+	AzureIdentityName    string   `json:"azureIdentityName"`
+	ClientSecretDuration string   `json:"clientSecretDuration"`
+	NodeResourceGroupID  string   `json:"nodeResourceGroupID"`
+	PodSelector          string   `json:"podSelector"`
+	SpnTags              []string `json:"spnTags,omitempty"`
 }
 
 // AzureIdentityTerminatorStatus defines the observed state of AzureIdentityTerminator
@@ -37,7 +39,10 @@ type AzureIdentityTerminatorStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-
+// +kubebuilder:printcolumn:name="AADApplication",type="string",JSONPath=".spec.aadRegistrationName",description="The name of the Azure AD Application registered"
+// +kubebuilder:printcolumn:name="ClientSecretDuration",type="string",JSONPath=".spec.clientSecretDuration",description="The life time of the ClientSecret"
+// +kubebuilder:printcolumn:name="ClientSecretExp",type="string",JSONPath=".status.clientSecretExpiration",description="The time the ClientSecret will expire"
+// +kubebuilder:printcolumn:name="PodSelector",type="string",JSONPath=".spec.podSelector",description="The selector that will bind pods to the AzureIdentityBinding"
 // AzureIdentityTerminator is the Schema for the azureidentityterminators API
 type AzureIdentityTerminator struct {
 	metav1.TypeMeta   `json:",inline"`

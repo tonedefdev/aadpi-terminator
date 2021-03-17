@@ -1,10 +1,10 @@
 apiVersion: aadpi-terminator.io/v1alpha1
 kind: AzureIdentityTerminator
 metadata:
-  name: test-pod-terminator
-  namespace: test
+  name: azure-sql
 spec:
-  aadRegistrationName: test-registration-namespace
-  azureIdentityName: test-azure-identity-name2
-  podSelector: test-pod2
-  clientSecretDuration: 2m
+  aadRegistrationName: azure-sql-pods
+  azureIdentityName: azure-sql-pod
+  nodeResourceGroupID: /subscriptions/7d069d72-e281-4e33-911b-aedadcb4f773/resourceGroups/NetworkWatcherRG
+  podSelector: azure-sql
+  clientSecretDuration: 720h

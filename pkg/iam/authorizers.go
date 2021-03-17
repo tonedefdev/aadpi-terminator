@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	armAuthorizer   autorest.Authorizer
 	graphAuthorizer autorest.Authorizer
 )
 
@@ -85,4 +86,26 @@ func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autore
 	}
 
 	return a, err
+}
+
+// GetResourceManagementAuthorizer gets an OAuthTokenAuthorizer for Azure Resource Manager
+func GetResourceManagementAuthorizer() (autorest.Authorizer, error) {
+	if armAuthorizer != nil {
+		return armAuthorizer, nil
+	}
+
+	var a autorest.Authorizer
+	var err error
+
+	a, err = getAuthorizerForResource(
+		grantType(), config.Environment().ResourceManagerEndpoint)
+
+	if err == nil {
+		// cache
+		armAuthorizer = a
+	} else {
+		// clear cache
+		armAuthorizer = nil
+	}
+	return armAuthorizer, err
 }

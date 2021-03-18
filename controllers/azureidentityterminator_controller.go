@@ -43,9 +43,9 @@ type AzureIdentityTerminatorReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=aadpi-terminator.io,resources=azureidentityterminators,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=aadpi-terminator.io,resources=azureidentityterminators/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=aadpi-terminator.io,resources=azureidentityterminators/finalizers,verbs=update
+// +kubebuilder:rbac:groups=azidterminator.io,resources=azureidentityterminators,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=azidterminator.io,resources=azureidentityterminators/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=azidterminator.io,resources=azureidentityterminators/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=aadpodidentity.k8s.io,resources=azureidentities;azureidentitybindings,verbs=get;list;watch;create;update;patch;delete
 
@@ -107,14 +107,14 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 	if err != nil && errors.IsNotFound(err) {
 
 		// Create the Azure AD Application that the AzureIdentity will leverage
-		log.Info("Creating a new Azure AD App Registration", "aadRegistrationName", terminator.Spec.AADRegistrationName)
+		log.Info("Creating a new Azure AD App Registration", "appRegistration.displayName.", terminator.Spec.AppRegistration.DisplayName)
 		aadAppRegistration, err := r.CreateApp(terminator)
 		if err != nil {
 			r.Log.Error(err, "Failed to create azuread application")
 			return ctrl.Result{}, err
 		}
 
-		log.Info("Successfully created Azure AD Application registration and Service Principal", "clientID", aadAppRegistration.ClientID)
+		log.Info("Successfully created Azure AD Application registration and Service Principal", "appRegistration.ObjectID", aadAppRegistration.ObjectID)
 
 		secret := &corev1.Secret{}
 		err = r.Get(ctx, types.NamespacedName{Name: terminator.Name, Namespace: terminator.Namespace}, secret)
@@ -151,10 +151,13 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 			log.Info("Sucessfully created AzureIdentityBinding", "AzureIdentityBinding.Name", terminator.Name)
 		}
 
-		// Update AzureIdentityTerminator status field
+		// Update status of the AzureIdentityTerminator object
 		terminator.Status.AzureIdentityBinding = terminator.Spec.AzureIdentityName
-		terminator.Status.ClientSecretExpiration = (*v1.Time)(&aadAppRegistration.ClientSecretExpiration)
-		terminator.Status.ObjectID = &aadAppRegistration.ObjectID
+		terminator.Status.AppRegistration.ObjectID = &aadAppRegistration.ObjectID
+		terminator.Status.RoleAssignment.Name = &aadAppRegistration.RoleAssignment.Name
+		terminator.Status.RoleAssignment.ObjectID = &aadAppRegistration.RoleAssignment.ObjectID
+		terminator.Status.ServicePrincipal.ClientSecretExpiration = (*v1.Time)(&aadAppRegistration.ServicePrincipal.ClientSecretExpiration)
+		terminator.Status.ServicePrincipal.ObjectID = &aadAppRegistration.ServicePrincipal.ObjectID
 
 		log.Info("Updating status of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
 		if err = r.Status().Update(ctx, terminator); err != nil {
@@ -199,10 +202,14 @@ func removeString(slice []string, s string) (result []string) {
 // CreateApp creates the Azure AD Application, SPN, and returns the necessary information
 func (r *AzureIdentityTerminatorReconciler) CreateApp(t *terminatorv1alpha1.AzureIdentityTerminator) (*azuread.App, error) {
 	aadApp := &azuread.App{
-		DisplayName:          t.Spec.AADRegistrationName,
-		Duration:             t.Spec.ClientSecretDuration,
-		NodeResourceGroupID:  t.Spec.NodeResourceGroupID,
-		ServicePrincipalTags: t.Spec.ServicePrincipalTags,
+		DisplayName: t.Spec.AppRegistration.DisplayName,
+		ServicePrincipal: azuread.ServicePrincipal{
+			Duration: t.Spec.ServicePrincipal.ClientSecretDuration,
+			Tags:     t.Spec.ServicePrincipal.Tags,
+		},
+		RoleAssignment: azuread.RoleAssignment{
+			NodeResourceGroup: t.Spec.NodeResourceGroup,
+		},
 	}
 
 	_, err := aadApp.CreateAzureADApp()
@@ -222,7 +229,10 @@ func (r *AzureIdentityTerminatorReconciler) CreateApp(t *terminatorv1alpha1.Azur
 func (r *AzureIdentityTerminatorReconciler) DeleteResources(t *terminatorv1alpha1.AzureIdentityTerminator) error {
 	ctx := context.Background()
 	aadApp := &azuread.App{
-		ObjectID: *t.Status.ObjectID,
+		ObjectID: *t.Status.AppRegistration.ObjectID,
+		RoleAssignment: azuread.RoleAssignment{
+			ObjectID: *t.Status.RoleAssignment.ObjectID,
+		},
 	}
 
 	// Delete AzureIdentity
@@ -242,6 +252,8 @@ func (r *AzureIdentityTerminatorReconciler) DeleteResources(t *terminatorv1alpha
 		return err
 	}
 
+	r.Log.Info("Successfully deleted AzureIdentity", "AzureIdentity.Name", t.Name)
+
 	// Delete AzureIdentityBinding
 	err = r.Delete(ctx, &aadpodv1.AzureIdentityBinding{
 		TypeMeta: v1.TypeMeta{
@@ -258,6 +270,8 @@ func (r *AzureIdentityTerminatorReconciler) DeleteResources(t *terminatorv1alpha
 		r.Log.Error(err, "Failed to delete AzureIdentityBinding", "AzureIdentityBinding.Name", t.Name)
 		return err
 	}
+
+	r.Log.Info("Successfully deleted AzureIdentityBinding", "AzureIdentityBinding.Name", t.Name)
 
 	// Delete Secret created by AzureIdentityTerminator
 	err = r.Delete(ctx, &corev1.Secret{
@@ -276,12 +290,16 @@ func (r *AzureIdentityTerminatorReconciler) DeleteResources(t *terminatorv1alpha
 		return err
 	}
 
+	r.Log.Info("Successfully deleted Secret", "Secret.Name", t.Name)
+
 	// Delete Azure AD App
 	_, err = aadApp.DeleteAzureApp()
 	if err != nil {
+		r.Log.Error(err, "Failed to delete RoleAssignment", t.Status.RoleAssignment.ObjectID)
 		return err
 	}
 
+	r.Log.Info("Successfully deleted RoleAssignment", "AzureIdentityTerminator.RoleAssignment.ObjectID", t.Status.RoleAssignment.ObjectID)
 	return err
 }
 
@@ -343,7 +361,7 @@ func (r *AzureIdentityTerminatorReconciler) SecretManfiest(t *terminatorv1alpha1
 		},
 		Immutable: to.BoolPtr(false),
 		StringData: map[string]string{
-			"clientSecret": app.ClientSecret,
+			"clientSecret": app.ServicePrincipal.ClientSecret,
 		},
 	}
 

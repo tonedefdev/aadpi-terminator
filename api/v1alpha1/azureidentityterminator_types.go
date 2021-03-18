@@ -22,26 +22,44 @@ import (
 
 // AzureIdentityTerminatorSpec defines the desired state of AzureIdentityTerminator
 type AzureIdentityTerminatorSpec struct {
-	AADRegistrationName  string   `json:"aadRegistrationName"`
-	AzureIdentityName    string   `json:"azureIdentityName"`
-	ClientSecretDuration string   `json:"clientSecretDuration"`
-	NodeResourceGroupID  string   `json:"nodeResourceGroupID"`
-	PodSelector          string   `json:"podSelector"`
-	ServicePrincipalTags []string `json:"servicePrincipalTags,omitempty"`
+	AppRegistration   AppRegistration  `json:"appRegistration,omitempty"`
+	AzureIdentityName string           `json:"azureIdentityName"`
+	NodeResourceGroup string           `json:"nodeResourceGroup"`
+	PodSelector       string           `json:"podSelector"`
+	ServicePrincipal  ServicePrincipal `json:"servicePrincipal,omitempty"`
 }
 
 // AzureIdentityTerminatorStatus defines the observed state of AzureIdentityTerminator
 type AzureIdentityTerminatorStatus struct {
-	ObjectID               *string      `json:"objectID,omitempty"`
-	AzureIdentityBinding   string       `json:"azureIdentityBinding,omitempty"`
+	AppRegistration      AppRegistration  `json:"appRegistration,omitempty"`
+	AzureIdentityBinding string           `json:"azureIdentityBinding,omitempty"`
+	RoleAssignment       RoleAssignment   `json:"roleAssignment,omitempty"`
+	ServicePrincipal     ServicePrincipal `json:"servicePrincipal,omitempty"`
+}
+
+type AppRegistration struct {
+	DisplayName string  `json:"displayName,omitempty"`
+	ObjectID    *string `json:"objectID,omitempty"`
+}
+
+type RoleAssignment struct {
+	Name     *string `json:"name,omitempty"`
+	ObjectID *string `json:"objectID,omitempty"`
+}
+
+type ServicePrincipal struct {
+	ClientSecretDuration   string       `json:"clientSecretDuration,omitempty"`
 	ClientSecretExpiration *metav1.Time `json:"clientSecretExpiration,omitempty"`
+	ObjectID               *string      `json:"objectID,omitempty"`
+	Tags                   []string     `json:"tags,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName="azidt"
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="AADApplication",type="string",JSONPath=".spec.aadRegistrationName",description="The name of the Azure AD Application registered"
-// +kubebuilder:printcolumn:name="ClientSecretDuration",type="string",JSONPath=".spec.clientSecretDuration",description="The life time of the ClientSecret"
-// +kubebuilder:printcolumn:name="ClientSecretExp",type="string",JSONPath=".status.clientSecretExpiration",description="The time the ClientSecret will expire"
+// +kubebuilder:printcolumn:name="AADApplication",type="string",JSONPath=".spec.appRegistration.displayName",description="The name of the Azure AD Application registered"
+// +kubebuilder:printcolumn:name="ClientSecretDuration",type="string",JSONPath=".spec.servicePrincipal.clientSecretDuration",description="The life time of the ClientSecret"
+// +kubebuilder:printcolumn:name="ClientSecretExp",type="string",JSONPath=".status.servicePrincipal.clientSecretExpiration",description="The time the ClientSecret will expire"
 // +kubebuilder:printcolumn:name="PodSelector",type="string",JSONPath=".spec.podSelector",description="The selector that will bind pods to the AzureIdentityBinding"
 // AzureIdentityTerminator is the Schema for the azureidentityterminators API
 type AzureIdentityTerminator struct {
@@ -53,7 +71,6 @@ type AzureIdentityTerminator struct {
 }
 
 // +kubebuilder:object:root=true
-
 // AzureIdentityTerminatorList contains a list of AzureIdentityTerminator
 type AzureIdentityTerminatorList struct {
 	metav1.TypeMeta `json:",inline"`

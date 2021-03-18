@@ -15,18 +15,28 @@ import (
 	config "github.com/tonedefdev/aadpi-terminator/pkg/internal"
 )
 
-// App struct defines an Azure AD Application
+// App struct defines an Azure AD Application and its permissions
 type App struct {
-	ClientID               string
+	ClientID         string
+	DisplayName      string
+	ObjectID         string
+	TenantID         string
+	RoleAssignment   RoleAssignment
+	ServicePrincipal ServicePrincipal
+}
+
+type RoleAssignment struct {
+	Name              string
+	NodeResourceGroup string
+	ObjectID          string
+}
+
+type ServicePrincipal struct {
 	ClientSecret           string
 	ClientSecretExpiration date.Time
-	DisplayName            string
 	Duration               string
-	NodeResourceGroupID    string
 	ObjectID               string
-	ServicePrincipalID     string
-	ServicePrincipalTags   []string
-	TenantID               string
+	Tags                   []string
 }
 
 // Adds the provided SPN to the 'Reader' role for the AKS cluster node resource group
@@ -34,18 +44,22 @@ func createRoleAssignment(aadApp *App) error {
 	ctx := context.Background()
 	sub := config.SubscriptionID()
 	reader := "/subscriptions/" + sub + "/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7"
+	rg := "/subscriptions/" + sub + "/resourceGroups/" + aadApp.RoleAssignment.NodeResourceGroup
 
 	roleAssignmentsClient, _ := getRoleAssignmentsClient()
-	_, err := roleAssignmentsClient.Create(
+	create, err := roleAssignmentsClient.Create(
 		ctx,
-		aadApp.NodeResourceGroupID,
+		rg,
 		uuid.New().String(),
 		authorization.RoleAssignmentCreateParameters{
 			Properties: &authorization.RoleAssignmentProperties{
-				PrincipalID:      to.StringPtr(aadApp.ServicePrincipalID),
+				PrincipalID:      to.StringPtr(aadApp.ServicePrincipal.ObjectID),
 				RoleDefinitionID: to.StringPtr(reader),
 			},
 		})
+
+	aadApp.RoleAssignment.Name = *create.Name
+	aadApp.RoleAssignment.ObjectID = *create.ID
 
 	return err
 }
@@ -106,7 +120,7 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 	spnClient := getServicePrincipalClient()
 	secret := generateRandomSecret()
 
-	duration, err := time.ParseDuration(aadApp.Duration)
+	duration, err := time.ParseDuration(aadApp.ServicePrincipal.Duration)
 	if err != nil {
 		// TODO: Implement error handling
 	}
@@ -131,7 +145,7 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 	spnCreateParam := graphrbac.ServicePrincipalCreateParameters{
 		AppID:               to.StringPtr(aadApp.ClientID),
 		PasswordCredentials: &clientSecret,
-		Tags:                &aadApp.ServicePrincipalTags,
+		Tags:                &aadApp.ServicePrincipal.Tags,
 	}
 
 	spnCreate, err := spnClient.Create(ctx, spnCreateParam)
@@ -139,10 +153,11 @@ func (aadApp *App) CreateServicePrincipal() (graphrbac.ServicePrincipal, error) 
 		return spnCreate, err
 	}
 
-	aadApp.ClientSecret = secret
-	aadApp.ClientSecretExpiration = *expiration
-	aadApp.ServicePrincipalID = *spnCreate.ObjectID
+	aadApp.ServicePrincipal.ClientSecret = secret
+	aadApp.ServicePrincipal.ClientSecretExpiration = *expiration
+	aadApp.ServicePrincipal.ObjectID = *spnCreate.ObjectID
 
+	// Loop through multiple times to avoid crashing when the Service Principal can't be initially found
 	for {
 		err = createRoleAssignment(aadApp)
 		if err == nil {
@@ -166,4 +181,19 @@ func (aadApp *App) DeleteAzureApp() (autorest.Response, error) {
 	}
 
 	return appDelete, err
+}
+
+func (aadApp *App) DeleteRoleAssignment() (authorization.RoleAssignment, error) {
+	ctx := context.Background()
+	roleClient, err := getRoleAssignmentsClient()
+	if err != nil {
+		return authorization.RoleAssignment{}, err
+	}
+
+	delRoleAssignment, err := roleClient.DeleteByID(ctx, aadApp.RoleAssignment.ObjectID)
+	if err != nil {
+		return delRoleAssignment, err
+	}
+
+	return delRoleAssignment, err
 }

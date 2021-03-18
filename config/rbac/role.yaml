@@ -19,32 +19,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - aadpi-terminator.io
-  resources:
-  - azureidentityterminators
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - aadpi-terminator.io
-  resources:
-  - azureidentityterminators/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - aadpi-terminator.io
-  resources:
-  - azureidentityterminators/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - aadpodidentity.k8s.io
   resources:
   - azureidentities
@@ -57,3 +31,29 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - azidterminator.io
+  resources:
+  - azureidentityterminators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - azidterminator.io
+  resources:
+  - azureidentityterminators/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - azidterminator.io
+  resources:
+  - azureidentityterminators/status
+  verbs:
+  - get
+  - patch
+  - update

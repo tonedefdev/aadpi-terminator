@@ -6,27 +6,29 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: azureidentityterminators.aadpi-terminator.io
+  name: azureidentityterminators.azidterminator.io
 spec:
-  group: aadpi-terminator.io
+  group: azidterminator.io
   names:
     kind: AzureIdentityTerminator
     listKind: AzureIdentityTerminatorList
     plural: azureidentityterminators
+    shortNames:
+    - azidt
     singular: azureidentityterminator
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - description: The name of the Azure AD Application registered
-      jsonPath: .spec.aadRegistrationName
+      jsonPath: .spec.appRegistration.displayName
       name: AADApplication
       type: string
     - description: The life time of the ClientSecret
-      jsonPath: .spec.clientSecretDuration
+      jsonPath: .spec.servicePrincipal.clientSecretDuration
       name: ClientSecretDuration
       type: string
     - description: The time the ClientSecret will expire
-      jsonPath: .status.clientSecretExpiration
+      jsonPath: .status.servicePrincipal.clientSecretExpiration
       name: ClientSecretExp
       type: string
     - description: The selector that will bind pods to the AzureIdentityBinding
@@ -55,38 +57,72 @@ spec:
             description: AzureIdentityTerminatorSpec defines the desired state of
               AzureIdentityTerminator
             properties:
-              aadRegistrationName:
-                type: string
+              appRegistration:
+                properties:
+                  displayName:
+                    type: string
+                  objectID:
+                    type: string
+                type: object
               azureIdentityName:
                 type: string
-              clientSecretDuration:
-                type: string
-              nodeResourceGroupID:
+              nodeResourceGroup:
                 type: string
               podSelector:
                 type: string
-              servicePrincipalTags:
-                items:
-                  type: string
-                type: array
+              servicePrincipal:
+                properties:
+                  clientSecretDuration:
+                    type: string
+                  clientSecretExpiration:
+                    format: date-time
+                    type: string
+                  objectID:
+                    type: string
+                  tags:
+                    items:
+                      type: string
+                    type: array
+                type: object
             required:
-            - aadRegistrationName
             - azureIdentityName
-            - clientSecretDuration
-            - nodeResourceGroupID
+            - nodeResourceGroup
             - podSelector
             type: object
           status:
             description: AzureIdentityTerminatorStatus defines the observed state
               of AzureIdentityTerminator
             properties:
+              appRegistration:
+                properties:
+                  displayName:
+                    type: string
+                  objectID:
+                    type: string
+                type: object
               azureIdentityBinding:
                 type: string
-              clientSecretExpiration:
-                format: date-time
-                type: string
-              objectID:
-                type: string
+              roleAssignment:
+                properties:
+                  name:
+                    type: string
+                  objectID:
+                    type: string
+                type: object
+              servicePrincipal:
+                properties:
+                  clientSecretDuration:
+                    type: string
+                  clientSecretExpiration:
+                    format: date-time
+                    type: string
+                  objectID:
+                    type: string
+                  tags:
+                    items:
+                      type: string
+                    type: array
+                type: object
             type: object
         type: object
     served: true

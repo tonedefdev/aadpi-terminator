@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	aadpiterminatorv1alpha1 "github.com/tonedefdev/aadpi-terminator/api/v1alpha1"
+	aadpiterminatorv1alpha1 "github.com/tonedefdev/azure-identity-terminator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

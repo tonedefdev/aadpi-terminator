@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	aadpodv1 "github.com/tonedefdev/aad-pod-identity/pkg/apis/aadpodidentity/v1"
-	aadpiterminatorv1alpha1 "github.com/tonedefdev/aadpi-terminator/api/v1alpha1"
-	"github.com/tonedefdev/aadpi-terminator/controllers"
+	aadpiterminatorv1alpha1 "github.com/tonedefdev/azure-identity-terminator/api/v1alpha1"
+	"github.com/tonedefdev/azure-identity-terminator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

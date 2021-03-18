@@ -36,8 +36,6 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 github.com/Azure/aad-pod-identity v1.7.4 h1:7gtIVW+UEZX3bfGt6DFkxwhjM80ptMYzWqta9vaXGZ8=
 github.com/Azure/aad-pod-identity v1.7.4/go.mod h1:dAEKh6VM1xLJc2Nkwa9+iRLl6BYQuLCvLMF18wXyMVk=
 github.com/Azure/azure-sdk-for-go v40.4.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
-github.com/Azure/azure-sdk-for-go v52.3.1+incompatible h1:Mpc7mE2/epRICn3fXPfcj8cr03P809QaI2MA8spbxzc=
-github.com/Azure/azure-sdk-for-go v52.3.1+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v52.4.0+incompatible h1:NpkT8MjJJMcgPJ5Q9E66QUgY9QRyxqM8MFx2P29uQZ4=
 github.com/Azure/azure-sdk-for-go v52.4.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=

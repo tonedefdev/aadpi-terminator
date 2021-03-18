@@ -11,8 +11,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/google/uuid"
-	iam "github.com/tonedefdev/aadpi-terminator/pkg/iam"
-	config "github.com/tonedefdev/aadpi-terminator/pkg/internal"
+	iam "github.com/tonedefdev/azure-identity-terminator/pkg/iam"
+	config "github.com/tonedefdev/azure-identity-terminator/pkg/internal"
 )
 
 // App struct defines an Azure AD Application and its permissions

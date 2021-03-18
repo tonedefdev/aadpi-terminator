@@ -6,7 +6,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
-	config "github.com/tonedefdev/aadpi-terminator/pkg/internal"
+	config "github.com/tonedefdev/azure-identity-terminator/pkg/internal"
 )
 
 var (

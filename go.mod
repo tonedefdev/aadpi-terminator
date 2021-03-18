@@ -1,4 +1,4 @@
-module github.com/tonedefdev/aadpi-terminator
+module github.com/tonedefdev/azure-identity-terminator
 
 go 1.15
 

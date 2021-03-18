@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	aadpodv1 "github.com/tonedefdev/aad-pod-identity/pkg/apis/aadpodidentity/v1"
-	terminatorv1alpha1 "github.com/tonedefdev/aadpi-terminator/api/v1alpha1"
-	azuread "github.com/tonedefdev/aadpi-terminator/pkg/azure"
+	terminatorv1alpha1 "github.com/tonedefdev/azure-identity-terminator/api/v1alpha1"
+	azuread "github.com/tonedefdev/azure-identity-terminator/pkg/azure"
 )
 
 // AzureIdentityTerminatorReconciler reconciles a AzureIdentityTerminator object
@@ -72,7 +72,7 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	// Examine DeletionTimestamp to determine if object is under deletion
-	finalizer := "finalizer.aadpi-terminator.io"
+	finalizer := "finalizer.azure-identity-terminator.io"
 	if terminator.ObjectMeta.DeletionTimestamp.IsZero() {
 		log.Info("Adding finalizer for when object is scheduled for deletion", "AzureIdentityTerminator.Name", terminator.Name)
 		if !containsString(terminator.ObjectMeta.Finalizers, finalizer) {

@@ -5,7 +5,7 @@ metadata:
   name: azureidentityterminator-viewer-role
 rules:
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - azidterminator.io
   resources:
   - azureidentityterminators
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - azidterminator.io
   resources:
   - azureidentityterminators/status
   verbs:

@@ -5,7 +5,7 @@ metadata:
   name: azureidentityterminator-editor-role
 rules:
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - azidterminator.io
   resources:
   - azureidentityterminators
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - aadpi-terminator.k8s.io
+  - azidterminator.io
   resources:
   - azureidentityterminators/status
   verbs:

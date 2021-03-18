@@ -1,29 +1,14 @@
 apiVersion: azidterminator.io/v1alpha1
 kind: AzureIdentityTerminator
 metadata:
-  name: azure-sql-3
+  name: azure-kv-access
 spec:
   appRegistration:
-    displayName: azure-kv-access-3
-  azureIdentityName: azure-kv-access-3
-  nodeResourceGroup: NetworkWatcherRG
-  podSelector: azure-kv-pods-3
+    displayName: azure-kv-access-test
+  azureIdentityName: azure-kv-access-test
+  nodeResourceGroup: MC_azid-terminator-rg_dev-azid-terminator-aks_westus2
+  podSelector: azure-kv-pods
   servicePrincipal:
     clientSecretDuration: 720h
     tags:
-    - azure-sql-aks-3
----
-apiVersion: azidterminator.io/v1alpha1
-kind: AzureIdentityTerminator
-metadata:
-  name: azure-sql-4
-spec:
-  appRegistration:
-    displayName: azure-kv-access-4
-  azureIdentityName: azure-kv-access-4
-  nodeResourceGroup: NetworkWatcherRG
-  podSelector: azure-kv-pods-4
-  servicePrincipal:
-    clientSecretDuration: 720h
-    tags:
-    - azure-sql-aks-4
+    - azure-kv-aks-test

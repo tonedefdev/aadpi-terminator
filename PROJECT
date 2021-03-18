@@ -1,10 +1,10 @@
 domain: io
 layout: go.kubebuilder.io/v3
-projectName: aadpi-terminator
-repo: github.com/tonedefdev/aadpi-terminator
+projectName: azure-identity-terminator
+repo: github.com/tonedefdev/azure-identity-terminator
 resources:
 - crdVersion: v1
-  group: aadpi-terminator
+  group: azidterminator
   kind: AzureIdentityTerminator
   version: v1alpha1
 version: 3-alpha

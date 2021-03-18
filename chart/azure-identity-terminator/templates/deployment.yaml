@@ -22,7 +22,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: tonedefdev/azure-identity-terminator:v0.0.1
+        image: tonedefdev/azure-identity-terminator:v0.0.2
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
@@ -41,6 +41,11 @@ spec:
           valueFrom:
             secretKeyRef:
               key: TenantID
+              name: azid-terminator-secret
+        - name: AZURE_SUBSCRIPTION_ID
+          valueFrom:
+            secretKeyRef:
+              key: SubscriptionID
               name: azid-terminator-secret
         livenessProbe:
           httpGet:

@@ -1,12 +1,12 @@
 apiVersion: azidterminator.io/v1alpha1
 kind: AzureIdentityTerminator
 metadata:
-  name: azure-kv-access
+  name: azure-kv-access-test
 spec:
   appRegistration:
     displayName: azure-kv-access-test
   azureIdentityName: azure-kv-access-test
-  nodeResourceGroup: MC_azid-terminator-rg_dev-azid-terminator-aks_westus2
+  nodeResourceGroup: NetworkWatcherRG
   podSelector: azure-kv-pods
   servicePrincipal:
     clientSecretDuration: 720h

@@ -1,6 +1,6 @@
 apiVersion: v2
 name: azure-identity-terminator
-description: A Helm chart for Kubernetes
+description: Manages the full life cycle of Service Principals for aad-pod-identities
 
 # A chart can be either an 'application' or a 'library' chart.
 #

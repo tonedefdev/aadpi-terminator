@@ -8,7 +8,9 @@ entries:
     digest: 65ffee2cb66a4e7f0bd0fcfedb56ad8eb764318b21eea11789828b8e88ee8756
     name: azure-identity-terminator
     type: application
+    sources:
+    - https://github.com/tonedefdev/azure-identity-terminator
     urls:
-    - https://tonedefdev.github.io/azure-identity-terminator/azure-identity-terminator-0.1.0.tgz
+    - https://raw.githubusercontent.com/tonedefdev/azure-identity-terminator/main/chart/azure-identity-terminator-0.1.0.tgz
     version: 0.1.0
 generated: "2021-03-21T21:46:19.2541848-07:00"

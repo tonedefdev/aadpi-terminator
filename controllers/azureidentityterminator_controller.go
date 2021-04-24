@@ -72,7 +72,7 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 	}
 
 	// Examine DeletionTimestamp to determine if object is under deletion
-	finalizer := "finalizer.azure-identity-terminator.io"
+	const finalizer string = "finalizer.azure-identity-terminator.io"
 	if terminator.ObjectMeta.DeletionTimestamp.IsZero() {
 		log.Info("Adding finalizer for when object is scheduled for deletion", "AzureIdentityTerminator.Name", terminator.Name)
 		if !containsString(terminator.ObjectMeta.Finalizers, finalizer) {
@@ -165,7 +165,7 @@ func (r *AzureIdentityTerminatorReconciler) Reconcile(ctx context.Context, req c
 			return ctrl.Result{}, err
 		}
 
-		log.Info("Successfully updated statues of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
+		log.Info("Successfully updated status of AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)
 
 		// AzureIdentity, AzureIdentityBinding, Azure AD App, Secret, and AzureIdentityTerminator created successfully - return and requeue
 		log.Info("Successfully created AzureIdentityTerminator", "AzureIdentityTerminator.Name", terminator.Name)

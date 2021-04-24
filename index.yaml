@@ -9,7 +9,7 @@ entries:
     name: azure-identity-terminator
     type: application
     sources:
-    - https://github.com/tonedefdev/azure-identity-terminator
+    - https://tonedefdev.github.io/azure-identity-terminator
     urls:
     - https://raw.githubusercontent.com/tonedefdev/azure-identity-terminator/main/chart/azure-identity-terminator-0.1.0.tgz
     version: 0.1.0

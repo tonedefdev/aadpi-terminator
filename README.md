@@ -89,7 +89,7 @@ az ad app permission admin-consent --id <APP_ID>
 # Installation
 We'll use Helm to deploy the application to the cluster. First add the application's repo:
 ```bash
-helm repo add azure-identity-terminator https://tonedefdev.github.io/azure-identity-terminator/
+helm repo add azid-terminator https://tonedefdev.github.io/azure-identity-terminator/
 ```
 
 Then we'll need to update the repo:
@@ -97,9 +97,9 @@ Then we'll need to update the repo:
 helm repo update
 ```
 
-Now we can install the application into the cluster:
+Now we can install the application into the cluster and pass in the `values.yaml` file we created earlier:
 ```bash
-helm install azure-identity-terminator azure-identity-terminator/azure-identity-terminator --create-namespace --namespace azure-identity-terminator -f values.yaml
+helm install azid-terminator azid-terminator/azure-identity-terminator --create-namespace --namespace azid-terminator-system -f values.yaml
 ```
 
 Once successfully installed you can check the pods are running:
@@ -108,7 +108,7 @@ kubectl get pods -n azure-identity-terminator
 ```
 
 # Deploy a Terminator
-First we need to create an `AzureIdentityManfiest`:
+First we need to create an `AzureIdentityTerminator` manfiest`:
 ```yaml
 apiVersion: azidterminator.io/v1alpha1
 kind: AzureIdentityTerminator
@@ -202,3 +202,17 @@ Spec:
 ```
 
 Now that all of the resources have been generated the `AzureIdentityBinding` should be bound to pod and node, and the application can now leverage this identity to securely access resources without the need of a password!
+
+# Delete AzureIdentityTerminator
+You can delete all the resources created by the `AzureIdentityTerminator` by deleting the `azidt` object:
+```bash
+kubectl delete azidt -n my-namespace azure-kv-access-test
+```
+
+This command will delete the following:
+- AzureIdentity
+- AzureIdentityBinding
+- AzureIdentityTerminator
+- The secret created
+- The App Registration
+- The role assignment

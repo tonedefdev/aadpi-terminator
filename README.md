@@ -61,6 +61,7 @@ deployment: azid-terminator-controller
 secrets:
   azureClientID: <APP_ID>
   azureClientSecret: <PASSWORD>
+  azureSubscriptionID: <SUBSCRIPTION_ID>
   azureTenantID: <TENANT>
 ```
 
@@ -138,10 +139,66 @@ Once the manifest has been deployed the `AzureIdentityTerminator` controller wil
 kubectl logs -n azure-identity-terminator <active_pod> -f
 ```
 
+Successful output:
+```log
+2021-04-21T00:00:19.613Z INFO controllers.AzureIdentityTerminator Successfully created AzureIdentityTerminator {"AzureIdentityTerminator": "default/azure-kv-access-test", "AzureIdentityTerminator.Name": "azure-kv-access-test"}
+```
+
 You should see a number of success messages that indicate the `AzureIdentityTerminator` has successfully generated all the resources required for the `aad-pod-identity` controller to bind the `Service Principal` to the cluster node.
 
 You can view the actual `AzureIdentityTerminator` status by running:
 ```bash
-kubectl get azid -n my-namespace
+kubectl get azidt -n my-namespace
 ```
 
+Output:
+```bash
+NAME                   AADAPPLICATION         CLIENTSECRETDURATION   CLIENTSECRETEXP        PODSELECTOR
+azure-kv-access-test   azure-kv-access-test   720h                   2021-05-21T00:00:14Z   azure-kv-pods
+```
+
+You can also describe it to get more detailed information:
+```yaml
+### line omitted for brevity
+Spec:
+  App Registration:
+    Display Name:       azure-kv-access-test
+  Azure Identity Name:  azure-kv-access-test
+  Node Resource Group:  NetworkWatcherRG
+  Pod Selector:         azure-kv-pods
+  Service Principal:
+    Client Secret Duration:  720h
+    Tags:
+      azure-kv-aks-test
+Status:
+  App Registration:
+    Object ID:             836856b7-c8d1-4bc2-ae87-649d242770db
+  Azure Identity Binding:  azure-kv-access-test
+  Role Assignment:
+    Name:       01a5a67b-690f-44c7-b881-121c53eb50ee
+    Object ID:  /subscriptions/7d069d72-e281-4e33-911b-aedadcb4f773/resourceGroups/NetworkWatcherRG/providers/Microsoft.Authorization/roleAssignments/01a5a67b-690f-44c7-b881-121c53eb50ee
+  Service Principal:
+    Client Secret Expiration:  2021-05-21T00:00:14Z
+    Object ID:                 7079dffe-2a51-469a-9b21-2188e0f3bf8e
+Events:                        <none>
+```
+
+You can view the actual `ClientID` of the `Azure AD App Registration` by describing the `AzureIdentity` the `Azure Identity Terminator` created:
+```bash
+kubectl describe azureidentity azure-kv-access-test
+```
+
+Output:
+```yaml
+### lines omitted for brevity
+Spec:
+  Ad Endpoint:
+  Ad Resource ID:
+  Auxiliary Tenant I Ds:  <nil>
+  Client ID:              3963a760-4d69-4669-952b-3267c36882dc
+  Client Password:
+    Name:       azure-kv-access-test
+    Namespace:  default
+```
+
+Now that all of the resources have been generated the `AzureIdentityBinding` should be bound to pod and node, and the application can now leverage this identity to securely access resources without the need of a password!

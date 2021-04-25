@@ -2,15 +2,15 @@ apiVersion: v1
 entries:
   azure-identity-terminator:
   - apiVersion: v2
-    appVersion: 0.0.2
-    created: "2021-03-21T21:46:19.2791119-07:00"
+    appVersion: 0.0.3
+    created: "2021-04-25T14:05:20.7468281-07:00"
     description: Manages the full life cycle of Service Principals for aad-pod-identities
-    digest: 65ffee2cb66a4e7f0bd0fcfedb56ad8eb764318b21eea11789828b8e88ee8756
+    digest: a8852eba820c1f8f5416d442763c8fe6523021121f1b7d2955b83ad71585a4c8
     name: azure-identity-terminator
     type: application
     sources:
     - https://tonedefdev.github.io/azure-identity-terminator
     urls:
-    - https://raw.githubusercontent.com/tonedefdev/azure-identity-terminator/main/chart/azure-identity-terminator-0.1.0.tgz
-    version: 0.1.0
-generated: "2021-03-21T21:46:19.2541848-07:00"
+    - https://raw.githubusercontent.com/tonedefdev/azure-identity-terminator/main/chart/azure-identity-terminator-0.1.1.tgz
+    version: 0.1.1
+generated: "2021-04-25T14:05:20.7408336-07:00"

@@ -43,7 +43,7 @@ Below is a guide that will walk you through setting up the **Azure Identity Term
 - `aad-pod-identities` configured via this method: [AAD Pod Identity with Dedicated SP](https://azure.github.io/aad-pod-identity/docs/configure/deploy_aad_pod_dedicated_sp/)
 - Access to your Azure Active Directory tenant to create the required Application Registration and Service Principal that AzureIdentityTerminator will leverage
 
-# Pre-Requisites
+# Prerequisites
 The first thing we need to do is generate a `Service Principal`
 ```bash
 az ad sp create-for-rbac --name azure-identity-terminator
@@ -108,7 +108,7 @@ kubectl get pods -n azure-identity-terminator
 ```
 
 # Deploy a Terminator
-First we need to create an `AzureIdentityTerminator` manfiest`:
+First we need to create an `AzureIdentityTerminator` manfiest:
 ```yaml
 apiVersion: azidterminator.io/v1alpha1
 kind: AzureIdentityTerminator

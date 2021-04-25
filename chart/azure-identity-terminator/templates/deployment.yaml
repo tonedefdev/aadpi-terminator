@@ -22,7 +22,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: tonedefdev/azure-identity-terminator:v0.0.2
+        image: tonedefdev/azure-identity-terminator:v0.0.3
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

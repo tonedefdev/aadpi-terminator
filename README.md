@@ -104,7 +104,7 @@ helm install azid-terminator azid-terminator/azure-identity-terminator --create-
 
 Once successfully installed you can check the pods are running:
 ```bash
-kubectl get pods -n azure-identity-terminator
+kubectl get pods -n azid-terminator-system
 ```
 
 # Deploy a Terminator

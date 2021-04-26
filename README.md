@@ -44,7 +44,7 @@ Below is a guide that will walk you through setting up the **Azure Identity Term
 - Access to your Azure Active Directory tenant to create the required Application Registration and Service Principal that AzureIdentityTerminator will leverage
 
 # Prerequisites
-The first thing we need to do is generate a `Service Principal`
+The first thing we need to do is generate a `Service Principal` for the AzureIdentityTerminator's controller:
 ```bash
 az ad sp create-for-rbac --name azure-identity-terminator
 ```

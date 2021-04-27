@@ -31,22 +31,22 @@ spec:
           valueFrom:
             secretKeyRef:
               key: ClientID
-              name: azid-terminator-secret
+              name: {{ print .Release.Name "-secret" }}
         - name: AZURE_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: ClientSecret
-              name: azid-terminator-secret
+              name: {{ print .Release.Name "-secret" }}
         - name: AZURE_TENANT_ID
           valueFrom:
             secretKeyRef:
               key: TenantID
-              name: azid-terminator-secret
+              name: {{ print .Release.Name "-secret" }}
         - name: AZURE_SUBSCRIPTION_ID
           valueFrom:
             secretKeyRef:
               key: SubscriptionID
-              name: azid-terminator-secret
+              name: {{ print .Release.Name "-secret" }}
         livenessProbe:
           httpGet:
             path: /healthz

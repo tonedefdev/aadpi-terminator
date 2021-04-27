@@ -1,7 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: azid-terminator-leader-election-rolebinding
+  name: {{ print .Release.Name "-leader-election-rolebinding" }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -9,4 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}

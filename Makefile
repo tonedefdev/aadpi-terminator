@@ -32,6 +32,12 @@ BUNDLE_IMG ?= controller-bundle:$(VERSION)
 IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+CHART_PATH = $(shell pwd)/chart/azure-identity-terminator
+CHART_DEST = $(shell pwd)/chart
+CHART_VER = ""
+CHART_URL = https://raw.githubusercontent.com/tonedefdev/azure-identity-terminator/main/
+RELEASE_NAME = azid-terminator
+RELEASE_NS = azid-terminator-system
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -97,6 +103,18 @@ docker-build:
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# Helm debug
+helm-debug:
+	helm template ${RELEASE_NAME} ${CHART_PATH} -n ${RELEASE_NS} --debug
+
+# Helm package
+helm-package: 
+	helm package ${CHART_PATH} -d ${CHART_DEST} --version ${CHART_VER}
+
+# Helm Chart re-index
+helm-index:
+	helm repo index --url ${CHART_URL} --merge index.yaml .
 
 # Download controller-gen locally if necessary
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen

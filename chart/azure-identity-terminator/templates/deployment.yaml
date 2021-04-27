@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.deployment }}
-  namespace: {{ .Values.namespace }}
+  name: {{ print .Release.Name "-controller" }}
+  namespace: {{ .Release.Namespace }}
   labels:
     control-plane: controller-manager
 spec:
@@ -22,7 +22,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: tonedefdev/azure-identity-terminator:v0.0.3
+        image: {{ print "tonedefdev/azure-identity-terminator:v" .Chart.AppVersion }}
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

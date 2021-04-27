@@ -55,9 +55,7 @@ Copy the output from this command and save it for the `values.yaml` file that we
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 replicaCount: 2
-namespace: azid-terminator-system
-deployment: azid-terminator-controller
-
+rbacRolesEnabled: true
 secrets:
   azureClientID: <APP_ID>
   azureClientSecret: <PASSWORD>
